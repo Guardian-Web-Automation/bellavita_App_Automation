@@ -9,3 +9,4 @@ reports/
 
 # QA audit artifacts (local only)
 scripts/audit-output/
+results/

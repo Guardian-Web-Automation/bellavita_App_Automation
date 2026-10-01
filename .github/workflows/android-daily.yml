@@ -1,0 +1,80 @@
+name: Bellavita App Automation Suite
+
+on:
+  # Daily at 02:30 UTC = 08:00 AM IST
+  schedule:
+    - cron: '30 2 * * *'
+  # Manual trigger from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  android-suite:
+    # Runs on YOUR machine's self-hosted runner (it has the emulator + build).
+    runs-on: [self-hosted, android]
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      ANDROID_AVD: Pixel7_API34
+      ANDROID_SERIAL: emulator-5554
+      ANDROID_APP_PACKAGE: com.bellavita.shopifyapps
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Clean previous run artifacts
+        run: rm -rf results reports/allure-results || true
+
+      - name: Prepare emulator (boot + pre-warm)
+        run: bash scripts/prepare-emulator.sh
+
+      - name: Run Android regression suite
+        # `|| true` so a test failure doesn't skip the summary/Slack steps.
+        run: npm run android || true
+
+      - name: Summarize results (JUnit)
+        id: summary
+        if: always()
+        run: node scripts/summarize-junit.mjs
+
+      - name: Generate Allure report
+        if: always()
+        run: npm run report:generate || true
+
+      - name: Upload Allure report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report-${{ github.run_number }}
+          path: reports/allure-report
+          retention-days: 30
+
+      - name: Upload JUnit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-results-${{ github.run_number }}
+          path: results
+          retention-days: 30
+
+      - name: Send Slack notification
+        if: always() && env.SLACK_WEBHOOK_URL != ''
+        env:
+          JOB_STATUS: ${{ job.status }}
+          EVENT: ${{ github.event_name }}
+          TESTS: ${{ steps.summary.outputs.tests }}
+          PASSED: ${{ steps.summary.outputs.passed }}
+          FAILURES: ${{ steps.summary.outputs.failures }}
+          SKIPPED: ${{ steps.summary.outputs.skipped }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node scripts/slack-notify.mjs

@@ -33,6 +33,14 @@ export const shared: Partial<WebdriverIO.Config> = {
       outputDir: './reports/allure-results',
       disableWebdriverStepsReporting: false,
       disableWebdriverScreenshotsReporting: false
+    }],
+    // JUnit XML (one per worker) under ./results — parsed by the daily workflow
+    // to build the Slack summary.
+    ['junit', {
+      outputDir: './results',
+      outputFileFormat(options: { cid: string }) {
+        return `junit-${options.cid}.xml`
+      }
     }]
   ],
   onPrepare: function () {},

@@ -12,7 +12,7 @@ export class PlpScreen extends BaseScreen {
   // Every PLP card exposes an inline quick-add (unlike the home feed, whose
   // layout is dynamic). The "View Cart, N Items" bar appears here once the
   // cart is non-empty — the app's only cart entry point.
-  private readonly quickAddButton = '~Add To Cart'
+  private readonly quickAddButton = '~product-quick-add' // was '~Add To Cart'; tagged in v5.780
   private readonly cartBar = '//*[contains(@content-desc,"View Cart")]'
 
   async isLoaded(): Promise<boolean> {

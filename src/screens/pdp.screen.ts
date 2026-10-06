@@ -64,4 +64,55 @@ export class PdpScreen extends BaseScreen {
   async addToCart(): Promise<void> {
     await this.tap(this.addToCartButton)
   }
+
+  // ---- Quantity stepper + section tabs (tagged in build v5.780) ----
+  // plus/minus carry a content-desc (~ resolves them); the value node is
+  // tagged resource-id only (empty content-desc), like the cart stepper.
+  private readonly qtyPlus = '~pdp-qty-plus'
+  private readonly qtyMinus = '~pdp-qty-minus'
+  private readonly qtyValue = 'android=new UiSelector().resourceIdMatches(".*pdp-qty-value")'
+
+  async incrementQty(): Promise<void> {
+    await this.tap(this.qtyPlus)
+  }
+
+  async decrementQty(): Promise<void> {
+    await this.tap(this.qtyMinus)
+  }
+
+  /** Current quantity shown in the stepper (0 if unreadable). */
+  async getQty(): Promise<number> {
+    const el = this.el(this.qtyValue)
+    const raw =
+      ((await el.getText().catch(() => '')) || '') +
+      ' ' + ((await el.getAttribute('content-desc').catch(() => '')) || '')
+    const m = raw.match(/\d+/)
+    return m ? Number(m[0]) : 0
+  }
+
+  /**
+   * Sticky section tabs are tagged as Android resource-id only (empty
+   * content-desc), so they must be matched via resourceIdMatches, not ~.
+   */
+  sectionTabSel(slug: string): string {
+    return `android=new UiSelector().resourceIdMatches(".*pdp-tab-${slug}")`
+  }
+
+  /** Tap a sticky section tab: "overview" | "reviews" | "view-similar". */
+  async tapSectionTab(slug: string): Promise<void> {
+    await this.tap(this.sectionTabSel(slug))
+  }
+
+  async isSectionTabDisplayed(slug: string): Promise<boolean> {
+    return this.isDisplayed(this.sectionTabSel(slug))
+  }
+
+  /** Scroll down until the sticky section-tab bar is on screen. */
+  async revealTabs(): Promise<void> {
+    for (let i = 0; i < 4; i++) {
+      if (await this.isSectionTabDisplayed('reviews')) return
+      await this.swipeDown()
+      await driver.pause(600)
+    }
+  }
 }

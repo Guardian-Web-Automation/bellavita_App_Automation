@@ -41,18 +41,17 @@ describe('Footer / Bottom Navigation Module (High)', () => {
   })
 
   it('BV_FTR_POS_001 bottom nav stays fixed while the page scrolls', async () => {
-    for (const tab of ['Home', 'Categories', 'Crazy Deals']) {
+    // Bottom-nav now uses stable testIDs (v5.780) instead of text labels.
+    for (const tab of ['nav-home', 'nav-categories', 'nav-offers', 'nav-crazy-deals']) {
       await expect($(`~${tab}`)).toBeDisplayed()
     }
-    // 3rd tab's label flip-flops between "Offers" and "Sale" across builds.
-    await expect($('android=new UiSelector().descriptionMatches("Offers|Sale")')).toBeDisplayed()
     await home.swipeDown()
     await driver.pause(500)
     await home.swipeUp()
     await driver.pause(500)
     // Nav bar is still present after scrolling in both directions.
-    await expect($('~Home')).toBeDisplayed()
-    await expect($('~Crazy Deals')).toBeDisplayed()
+    await expect($('~nav-home')).toBeDisplayed()
+    await expect($('~nav-crazy-deals')).toBeDisplayed()
   })
 
   it('BV_FTR_POS_003 tapping Home from another tab returns to Home', async () => {
@@ -65,7 +64,7 @@ describe('Footer / Bottom Navigation Module (High)', () => {
 
   it('BV_FTR_POS_004 tapping Categories opens the Categories page', async () => {
     await nav.tapCategories()
-    await expect($('~Categories')).toBeDisplayed()
+    await expect($('~nav-categories')).toBeDisplayed()
     // We left the Home feed (Shop All is a home-only element). NOTE: the
     // category grid tiles themselves are UUID-only (untagged) — deeper grid
     // assertions are blocked pending testIDs.

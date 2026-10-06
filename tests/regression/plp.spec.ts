@@ -88,7 +88,14 @@ describe('PLP / Collection Module (High)', () => {
   })
 
   // ---- ⏭️ Blocked: untagged — variant popups ------------------------------
-  it.skip('BV_PLP_POS_005 quick-add simple card adds directly — BLOCKED: quick-add not card-bound', () => {})
+  it('BV_PLP_POS_005 quick-add on a card adds it to the cart', async () => {
+    await nav.openMenuItem('shop-all')
+    await driver.pause(2000)
+    await collection.quickAddFirstProduct()
+    await driver.pause(2500)
+    // The "View Cart, N Items" bar appears once the item is in the cart.
+    await expect($('//*[contains(@content-desc,"View Cart")]')).toBeDisplayed()
+  })
   it.skip('BV_PLP_POS_006 variant CTA opens "Select Option" popup — BLOCKED: variant CTA/popup untagged', () => {})
   it.skip('BV_PLP_POS_007 confirm option adds that variant — BLOCKED: variant popup untagged', () => {})
   it.skip('BV_PLP_POS_008 variant CTA opens "Select Color" popup — BLOCKED: variant CTA/popup untagged', () => {})

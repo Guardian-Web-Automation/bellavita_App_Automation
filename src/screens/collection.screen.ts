@@ -19,7 +19,7 @@ export class CollectionScreen extends BaseScreen {
   // (name, rating, savings, price, MRP, Bellacash). The ₹ is the reliable
   // "this is a product card" marker. No per-card / child-node testIDs exist.
   private readonly productCard = '//*[contains(@content-desc,"₹")]'           // TODO: ~product-card
-  private readonly quickAddButton = '~Add To Cart'                            // TODO: ~product-quick-add
+  private readonly quickAddButton = '~product-quick-add'                         // tagged in v5.780
   private readonly cartBar = '//*[contains(@content-desc,"View Cart")]'       // TODO: ~cart-bar
   private readonly searchEntry = '//*[contains(@content-desc,"Search for")]'  // TODO: ~search-entry
 
@@ -63,6 +63,11 @@ export class CollectionScreen extends BaseScreen {
   /** Tap the first product card (its whole-card blurb node) to open its PDP. */
   async openFirstProduct(): Promise<void> {
     await this.tap(this.productCard)
+  }
+
+  /** Quick-add the first product via its inline add button (~product-quick-add). */
+  async quickAddFirstProduct(): Promise<void> {
+    await this.tap(this.quickAddButton)
   }
 
   /**
@@ -149,6 +154,36 @@ export class CollectionScreen extends BaseScreen {
 
   async applyFilter(): Promise<void> {
     await this.tap(this.filterApply)
+  }
+
+  // ---- Discrete price / MRP nodes (tagged in build v5.780) ----
+  private readonly productPrice = '~product-price'
+  private readonly productMrp = '~product-mrp'
+
+  async isPriceDisplayed(): Promise<boolean> {
+    return this.isDisplayed(this.productPrice)
+  }
+
+  async isMrpDisplayed(): Promise<boolean> {
+    return this.isDisplayed(this.productMrp)
+  }
+
+  private async firstAmount(selector: string): Promise<number> {
+    const el = this.el(selector)
+    const text = ((await el.getText().catch(() => '')) || '') +
+      ' ' + ((await el.getAttribute('content-desc').catch(() => '')) || '')
+    const m = text.match(/₹\s?([\d,]+(?:\.\d+)?)/)
+    return m ? Number(m[1].replace(/,/g, '')) : NaN
+  }
+
+  /** First card's selling price (from the ~product-price node). */
+  async getFirstPrice(): Promise<number> {
+    return this.firstAmount(this.productPrice)
+  }
+
+  /** First card's struck MRP (from the ~product-mrp node). */
+  async getFirstMrp(): Promise<number> {
+    return this.firstAmount(this.productMrp)
   }
 
   /**

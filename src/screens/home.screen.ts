@@ -15,7 +15,7 @@ export class HomeScreen extends BaseScreen {
   // "View Cart, N Items" bar — only present on listing screens when the cart
   // is non-empty. This is the app's only cart entry point (no bottom-nav cart).
   private readonly cartBar = '//*[contains(@content-desc,"View Cart")]'
-  private readonly quickAddButton = '~Add To Cart'
+  private readonly quickAddButton = '~product-quick-add' // was '~Add To Cart'; tagged in v5.780
   // A product card's accessibility label carries its price, so a ₹ is a
   // reliable "this is a product card" marker.
   private readonly productCard = '//*[contains(@content-desc,"₹")]'

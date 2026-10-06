@@ -3,20 +3,28 @@ import { BaseScreen } from './base.screen.js'
 /**
  * NavigationScreen — the bottom tab bar (Home / Categories / Offers / Crazy Deals).
  *
- * INTERIM SELECTORS: these key off the tabs' visible accessibility labels
- * (`~Home`, etc.), validated live via scripts/audit.mjs. They are text-based
- * and therefore tied to the current copy — replace each with a real, stable
- * RN `testID` (e.g. `~nav-home`) once the dev team backfills them. Track this
- * in the testID-audit backlog alongside the other screens.
+ * Build v5.780+: the tabs now have real testIDs (~nav-home, ~nav-categories,
+ * ~nav-offers, ~nav-crazy-deals, ~nav-whatsapp) — so we no longer key off the
+ * visible labels (which flip-flopped between "Offers" and "Sale").
  */
 export class NavigationScreen extends BaseScreen {
-  private readonly homeTab = '~Home'                // TODO: replace with ~nav-home testID
-  private readonly categoriesTab = '~Categories'    // TODO: replace with ~nav-categories testID
-  // The 3rd tab's label flip-flops between "Offers" and "Sale" across builds
-  // (carnival campaigns) — a live example of why text labels are brittle. Match
-  // either so the tests survive the rename until a real testID is added.
-  private readonly offersTab = 'android=new UiSelector().descriptionMatches("Offers|Sale")' // TODO: ~nav-offers testID
-  private readonly crazyDealsTab = '~Crazy Deals'   // TODO: replace with ~nav-crazy-deals testID
+  private readonly homeTab = '~nav-home'
+  private readonly categoriesTab = '~nav-categories'
+  private readonly offersTab = '~nav-offers'
+  private readonly crazyDealsTab = '~nav-crazy-deals'
+
+  // Map the human labels tests pass to the stable nav testIDs.
+  private tabSelector(label: string): string {
+    const map: Record<string, string> = {
+      Home: this.homeTab,
+      Categories: this.categoriesTab,
+      Offers: this.offersTab,
+      Sale: this.offersTab,
+      'Crazy Deals': this.crazyDealsTab,
+      WhatsApp: '~nav-whatsapp'
+    }
+    return map[label] ?? `~${label}`
+  }
 
   async tapHome(): Promise<void> {
     await this.tap(this.homeTab)
@@ -34,9 +42,9 @@ export class NavigationScreen extends BaseScreen {
     await this.tap(this.crazyDealsTab)
   }
 
-  /** Is the tab with the given visible label currently displayed? */
+  /** Is the tab with the given label (or nav testID) currently displayed? */
   async isTabDisplayed(label: string): Promise<boolean> {
-    return this.isDisplayed(`~${label}`)
+    return this.isDisplayed(this.tabSelector(label))
   }
 
   // ---- Hamburger drawer (top-left) ----

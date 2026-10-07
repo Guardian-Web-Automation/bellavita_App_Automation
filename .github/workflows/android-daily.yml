@@ -32,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-           - name: Clean previous run artifacts
+      - name: Clean previous run artifacts
         run: |
           if (Test-Path results) {
             Remove-Item results -Recurse -Force

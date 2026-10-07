@@ -13,3 +13,8 @@ results/
 
 # IDE
 .idea/
+
+# debug artifacts
+ui.xml
+*-screen.png
+bellavita-screen.png

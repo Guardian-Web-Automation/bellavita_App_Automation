@@ -39,8 +39,9 @@ jobs:
         run: bash scripts/prepare-emulator.sh
 
       - name: Run Android regression suite
-        # `|| true` so a test failure doesn't skip the summary/Slack steps.
-        run: npm run android || true
+        id: tests
+        continue-on-error: true
+        run: npm run android
 
       - name: Summarize results (JUnit)
         id: summary
@@ -78,3 +79,7 @@ jobs:
           SKIPPED: ${{ steps.summary.outputs.skipped }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: node scripts/slack-notify.mjs
+
+      - name: Fail workflow if tests failed
+        if: steps.tests.outcome == 'failure'
+        run: exit 1

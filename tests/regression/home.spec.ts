@@ -83,10 +83,19 @@ describe('Home Page Module (High)', () => {
     await expect($('//*[contains(@content-desc,"Reviews")]')).toBeDisplayed()
   })
 
+  // NOTE: Home carousel quick-add doesn't reliably morph into a verifiable
+  // qty stepper from the feed (unlike the Search results grid and the PLP),
+  // so 014/048 stay skipped. The add-to-cart capability itself IS covered —
+  // via Search (BV_SRCH_POS_012/039) and PLP (BV_PLP_POS_005/049).
+  it.skip('BV_HOME_POS_014 Add to Cart in a carousel — BLOCKED: home carousel quick-add not reliably verifiable (covered on Search/PLP)', () => {})
+  it.skip('BV_HOME_E2E_048 Perfumes carousel → add to cart → confirm in Cart — BLOCKED: home carousel quick-add not reliably verifiable (covered on Search/PLP)', () => {})
+
   // ---- ⏭️ Blocked: untagged / dynamic (need testIDs) ----------------------
+  // Banners/heroes are dynamic appmaker UUID containers with no stable id;
+  // section "see-all" arrows and "Shop by Category" cards are icon-only /
+  // UUID (confirmed via live home dump) — all need dev testIDs.
   it.skip('BV_HOME_POS_011 top banner → collection — BLOCKED: banner is dynamic/UUID (untagged)', () => {})
   it.skip('BV_HOME_POS_012 "Shop Bestsellers" arrow → collection — BLOCKED: section arrow untagged', () => {})
-  it.skip('BV_HOME_POS_014 Add to Cart in Bestsellers carousel — BLOCKED: quick-add not card-bound / below fold (see PLP-030)', () => {})
   it.skip('BV_HOME_POS_019 "Trending Now" arrow → collection — BLOCKED: section arrow untagged', () => {})
   it.skip('BV_HOME_POS_026 "New Arrival" arrow → collection — BLOCKED: section arrow untagged', () => {})
   it.skip('BV_HOME_POS_028 Perfumes "Shop by Category" card → collection — BLOCKED: category card untagged/UUID', () => {})
@@ -94,7 +103,6 @@ describe('Home Page Module (High)', () => {
   it.skip('BV_HOME_POS_041 Skincare hero + cards + carousel pattern — BLOCKED: hero/CTA/cards untagged', () => {})
   it.skip('BV_HOME_POS_042 Bath & Body hero + cards + carousel pattern — BLOCKED: hero/CTA/cards untagged', () => {})
   it.skip('BV_HOME_POS_043 Cosmetics hero + cards + carousel pattern — BLOCKED: hero/CTA/cards untagged', () => {})
-  it.skip('BV_HOME_E2E_048 Perfumes carousel → add to cart → confirm in Cart — BLOCKED: quick-add not card-bound', () => {})
   it.skip('BV_HOME_POS_057 Skincare "Shop Now" hero → collection — BLOCKED: hero CTA untagged', () => {})
   it.skip('BV_HOME_POS_058 Skincare "Shop by Category" card → sub-collection — BLOCKED: category card untagged', () => {})
   it.skip('BV_HOME_POS_065 Bath & Body "Shop Now" hero → collection — BLOCKED: hero CTA untagged', () => {})

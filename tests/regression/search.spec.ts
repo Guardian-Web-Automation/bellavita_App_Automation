@@ -83,34 +83,80 @@ describe('Search Module (High)', () => {
     await expect($('~Search input')).toBeDisplayed()
   })
 
-  // ---- ⏭️ Blocked: not exposed — SORT / FILTER ----------------------------
-  it.skip('BV_SRCH_POS_044 Filter panel opens with four tabs — BLOCKED: filter not in a11y tree', () => {})
-  it.skip('BV_SRCH_POS_050 Availability filter (In stock) — BLOCKED: filter not in a11y tree', () => {})
-  it.skip('BV_SRCH_POS_051 combine Price + Type + Availability filters — BLOCKED: filter not in a11y tree', () => {})
-  it.skip('BV_SRCH_POS_055 Sort bottom sheet opens (Featured default) — BLOCKED: sort not in a11y tree', () => {})
-  it.skip('BV_SRCH_POS_056 Sort Price: Low to High — BLOCKED: sort not in a11y tree', () => {})
-  it.skip('BV_SRCH_POS_057 Sort Price: High to Low — BLOCKED: sort not in a11y tree', () => {})
-  it.skip('BV_SRCH_POS_059 Filter + Sort combined — BLOCKED: sort/filter not in a11y tree', () => {})
+  // ---- ✅ Unblocked via hybrid text/content-desc selectors -----------------
 
-  // ---- ⏭️ Blocked: untagged — add-to-cart / variant popup -----------------
-  it.skip('BV_SRCH_POS_012 quick-add single-variant from Popular Products — BLOCKED: quick-add not card-bound', () => {})
-  it.skip('BV_SRCH_POS_013 "X Shades" CTA opens Select Variant popup — BLOCKED: variant CTA/popup untagged', () => {})
-  it.skip('BV_SRCH_POS_015 ADD TO CART in Select Variant popup — BLOCKED: variant popup untagged', () => {})
-  it.skip('BV_SRCH_POS_039 quick-add single-variant from results grid — BLOCKED: quick-add not card-bound', () => {})
-  it.skip('BV_SRCH_POS_040 variant shade-selection CTA on results — BLOCKED: variant CTA/popup untagged', () => {})
+  it('BV_SRCH_POS_009 tapping a Trending Search chip opens results', async () => {
+    await search.tapTrendingChip()
+    await driver.pause(2500)
+    await expect($('//*[contains(@content-desc,"₹")]')).toBeDisplayed()
+  })
 
-  // ---- ⏭️ Blocked: dynamic / untagged suggestions -------------------------
-  it.skip('BV_SRCH_POS_003 searched term appears under Recent Searches — BLOCKED: recent-searches section untagged', () => {})
-  it.skip('BV_SRCH_POS_006 tapping a recent search opens results — BLOCKED: recent-searches items untagged', () => {})
-  it.skip('BV_SRCH_POS_009 tapping a Trending Search chip opens results — BLOCKED: trending chips are dynamic', () => {})
-  it.skip('BV_SRCH_POS_022 typing shows a Categories suggestion section — BLOCKED: Categories section untagged', () => {})
-  it.skip('BV_SRCH_POS_023 tapping a Category suggestion opens results — BLOCKED: category suggestion untagged', () => {})
+  it('BV_SRCH_POS_022 typing shows a Categories suggestion section', async () => {
+    await search.typeQuery('lip')
+    await driver.pause(2000)
+    await expect($(search.categoriesHeading)).toBeDisplayed()
+  })
 
-  // ---- ⏭️ Blocked: env / journeys needing cart-bind or login --------------
-  it.skip('BV_SRCH_NEG_060 offline search error state — BLOCKED: env (network toggle)', () => {})
-  it.skip('BV_SRCH_E2E_062 guest search → add to cart → cart drawer — BLOCKED: quick-add not card-bound', () => {})
-  it.skip('BV_SRCH_E2E_063 logged-in search/filter/sort → add cheapest — BLOCKED: login + sort/filter', () => {})
-  it.skip('BV_SRCH_E2E_064 shaded product variant → cart drawer — BLOCKED: variant popup untagged', () => {})
-  it.skip('BV_SRCH_POS_065 search → suggestion → results → add to cart — BLOCKED: quick-add not card-bound', () => {})
-  it.skip('BV_SRCH_POS_066 search → sort → add cheapest from grid — BLOCKED: sort not in a11y tree', () => {})
+  it('BV_SRCH_POS_023 tapping a suggestion opens results', async () => {
+    await search.typeQuery('lip')
+    await driver.pause(2500)
+    expect(await search.tapSuggestion()).toBe(true)
+    await driver.pause(2500)
+    await expect($('//*[contains(@content-desc,"₹")]')).toBeDisplayed()
+  })
+
+  it('BV_SRCH_POS_012 quick-add a single-variant product from Popular Products', async () => {
+    // Search landing shows Popular Products with per-card quick-add.
+    expect(await search.quickAddInStock()).toBe(true)
+  })
+
+  it('BV_SRCH_POS_039 quick-add a single-variant product from the results grid', async () => {
+    await search.search('perfume')
+    await driver.pause(2500)
+    expect(await search.quickAddInStock()).toBe(true)
+  })
+
+  it('BV_SRCH_E2E_062 guest search → add to cart → cart page', async () => {
+    await search.search('perfume')
+    await driver.pause(2500)
+    expect(await search.quickAddInStock()).toBe(true)
+    await search.openCartBar()
+    await expect($('~PLACE ORDER')).toBeDisplayed()
+  })
+
+  it('BV_SRCH_POS_065 search → suggestion → results → add to cart', async () => {
+    await search.typeQuery('lip')
+    await driver.pause(2500)
+    expect(await search.tapSuggestion()).toBe(true)
+    await driver.pause(2500)
+    expect(await search.quickAddInStock()).toBe(true)
+  })
+
+  // ---- ⏭️ Blocked: SORT / FILTER are not present in the Wizzy search UI ----
+  // Confirmed via live dump: the search results screen has no Filter or Sort
+  // controls at all (they exist on the PLP, covered there), so these cannot be
+  // exercised from Search.
+  it.skip('BV_SRCH_POS_044 Filter panel opens with four tabs — BLOCKED: no Filter control in search UI', () => {})
+  it.skip('BV_SRCH_POS_050 Availability filter (In stock) — BLOCKED: no Filter control in search UI', () => {})
+  it.skip('BV_SRCH_POS_051 combine Price + Type + Availability filters — BLOCKED: no Filter control in search UI', () => {})
+  it.skip('BV_SRCH_POS_055 Sort bottom sheet opens (Featured default) — BLOCKED: no Sort control in search UI', () => {})
+  it.skip('BV_SRCH_POS_056 Sort Price: Low to High — BLOCKED: no Sort control in search UI', () => {})
+  it.skip('BV_SRCH_POS_057 Sort Price: High to Low — BLOCKED: no Sort control in search UI', () => {})
+  it.skip('BV_SRCH_POS_059 Filter + Sort combined — BLOCKED: no Sort/Filter control in search UI', () => {})
+  it.skip('BV_SRCH_POS_066 search → sort → add cheapest from grid — BLOCKED: no Sort control in search UI', () => {})
+
+  // ---- ⏭️ Blocked: variant/shade popup not exposed on search cards ---------
+  // Confirmed via live dump: no "X Shades"/"X Variant" CTA on search cards.
+  it.skip('BV_SRCH_POS_013 "X Shades" CTA opens Select Variant popup — BLOCKED: variant CTA/popup not exposed', () => {})
+  it.skip('BV_SRCH_POS_015 ADD TO CART in Select Variant popup — BLOCKED: variant popup not exposed', () => {})
+  it.skip('BV_SRCH_POS_040 variant shade-selection CTA on results — BLOCKED: variant CTA/popup not exposed', () => {})
+  it.skip('BV_SRCH_E2E_064 shaded product variant → cart drawer — BLOCKED: variant popup not exposed', () => {})
+
+  // ---- ⏭️ Blocked: no Recent Searches section observed on the landing ------
+  it.skip('BV_SRCH_POS_003 searched term appears under Recent Searches — BLOCKED: no Recent Searches section in build', () => {})
+  it.skip('BV_SRCH_POS_006 tapping a recent search opens results — BLOCKED: no Recent Searches section in build', () => {})
+
+  // ---- ⏭️ Blocked: env / login (phase 2) ----------------------------------
+  it.skip('BV_SRCH_NEG_060 offline search error state — BLOCKED: env (network toggle) + error state untagged', () => {})
+  it.skip('BV_SRCH_E2E_063 logged-in search/filter/sort → add cheapest — BLOCKED: login (phase 2) + no sort/filter', () => {})
 })

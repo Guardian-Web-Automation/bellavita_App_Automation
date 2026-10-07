@@ -52,4 +52,35 @@ export class HomeScreen extends BaseScreen {
   async openCartBar(): Promise<void> {
     await this.tap(this.cartBar)
   }
+
+  // ---- Carousel quick-add (hybrid) ----
+  // Tapping a card's quick-add morphs it into a qty stepper (pdp-qty-* ids);
+  // the "N Items" bar counts distinct items only and doesn't live-update, so a
+  // new stepper is the reliable "added" signal.
+  private readonly quickAdd = '//*[@content-desc="product-quick-add"]'
+  private readonly cardStepper = '~pdp-qty-plus'
+
+  private async count(selector: string): Promise<number> {
+    return (await this.els(selector)).length
+  }
+
+  /** Quick-add the first in-stock carousel card; true once a stepper appears. */
+  async quickAddFromCarousel(): Promise<boolean> {
+    const before = await this.count(this.cardStepper)
+    let tried = 0
+    for (const btn of await this.els(this.quickAdd)) {
+      if (tried >= 4) break
+      tried++
+      await btn.click().catch(() => undefined)
+      const ok = await driver
+        .waitUntil(async () => (await this.count(this.cardStepper)) > before, {
+          timeout: 3000,
+          interval: 500,
+        })
+        .then(() => true)
+        .catch(() => false)
+      if (ok) return true
+    }
+    return false
+  }
 }

@@ -45,4 +45,28 @@ export class CrazyDealsScreen extends BaseScreen {
   async selectedCount(): Promise<number> {
     return (await this.els(this.removeFromBox)).length
   }
+
+  // ---- Builder header + search (reachable via text, hybrid selectors) ----
+  // The builder header shows the deal name, a ₹ price and the "Select Any N"
+  // instruction as plain text; the deal set has a "Search what you desire" box.
+  private readonly builderPrice = '//*[contains(@text,"₹")]'
+  private readonly requiredCountText = '//*[contains(@text,"Select Any")]'
+  private readonly builderSearch = '//android.widget.EditText[@text="Search what you desire"]'
+
+  /** True if the builder header shows a ₹ price and the required-count line. */
+  async isHeaderDisplayed(): Promise<boolean> {
+    return (
+      (await this.isDisplayed(this.builderPrice)) &&
+      (await this.isDisplayed(this.requiredCountText))
+    )
+  }
+
+  async isSearchBoxDisplayed(): Promise<boolean> {
+    return this.isDisplayed(this.builderSearch)
+  }
+
+  /** Type into the deal-set search box (does not submit). */
+  async searchInDeal(term: string): Promise<void> {
+    await this.type(this.builderSearch, term)
+  }
 }

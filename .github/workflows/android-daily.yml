@@ -14,7 +14,7 @@ jobs:
     timeout-minutes: 60
     defaults:
       run:
-        shell: bash
+        shell: powershell
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       ANDROID_AVD: Pixel7_API34
@@ -32,11 +32,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Clean previous run artifacts
-        run: rm -rf results reports/allure-results || true
+           - name: Clean previous run artifacts
+        run: |
+          if (Test-Path results) {
+            Remove-Item results -Recurse -Force
+          }
+
+          if (Test-Path reports/allure-results) {
+            Remove-Item reports/allure-results -Recurse -Force
+          }
 
       - name: Prepare emulator (boot + pre-warm)
-        run: bash scripts/prepare-emulator.sh
+        run: powershell -ExecutionPolicy Bypass -File scripts\prepare-emulator.ps1
 
       - name: Run Android regression suite
         id: tests

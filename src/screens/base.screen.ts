@@ -27,8 +27,12 @@ export class BaseScreen {
   }
 
   async isDisplayed(selector: string): Promise<boolean> {
-    return this.el(selector).isDisplayed()
+  try {
+    return await this.el(selector).isDisplayed()
+  } catch {
+    return false
   }
+}
 
   async tap(selector: string, timeout = this.defaultTimeout): Promise<void> {
     const element = this.el(selector)

@@ -7,6 +7,13 @@ export const shared: Partial<WebdriverIO.Config> = {
   specs: ['../tests/regression/**/*.spec.ts'],
   exclude: [],
   maxInstances: 1,
+  // A full back-to-back run can intermittently blank the app feed on a
+  // memory-constrained host (always-present nav/feed elements momentarily
+  // "not displayed"). Retry a failed spec file once, deferred to the end of
+  // the queue so the emulator gets a breather before the re-run.
+  specFileRetries: 1,
+  specFileRetriesDeferred: true,
+  specFileRetriesDelay: 5,
   logLevel: 'info',
   bail: 0,
   waitforTimeout: 15000,

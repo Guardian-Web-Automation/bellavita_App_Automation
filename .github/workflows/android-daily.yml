@@ -20,6 +20,8 @@ jobs:
       ANDROID_AVD: Pixel7_API34
       ANDROID_SERIAL: emulator-5554
       ANDROID_APP_PACKAGE: com.bellavita.shopifyapps
+      ANDROID_SDK_ROOT: C:\Users\gourav.kumar_oneguar\AppData\Local\Android\Sdk
+      ANDROID_HOME: C:\Users\gourav.kumar_oneguar\AppData\Local\Android\Sdk
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

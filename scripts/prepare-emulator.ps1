@@ -1,11 +1,11 @@
 $ErrorActionPreference = "Stop"
 
-# Environment variables with defaults
+# Environment variables
 $AVD = if ($env:ANDROID_AVD) { $env:ANDROID_AVD } else { "Pixel7_API34" }
 $SERIAL = if ($env:ANDROID_SERIAL) { $env:ANDROID_SERIAL } else { "emulator-5554" }
 $PKG = if ($env:ANDROID_APP_PACKAGE) { $env:ANDROID_APP_PACKAGE } else { "com.bellavita.shopifyapps" }
 
-# Locate Android SDK
+# Android SDK
 if ($env:ANDROID_SDK_ROOT) {
     $SDK = $env:ANDROID_SDK_ROOT
 }
@@ -17,20 +17,31 @@ else {
 }
 
 $EMU = Join-Path $SDK "emulator\emulator.exe"
+$ADB = Join-Path $SDK "platform-tools\adb.exe"
 
+Write-Host "Android SDK: $SDK"
+Write-Host "Emulator: $EMU"
+Write-Host "ADB: $ADB"
+Write-Host "AVD: $AVD"
+Write-Host "Serial: $SERIAL"
+Write-Host "Package: $PKG"
+
+# Validate Android SDK
 if (-not (Test-Path $EMU)) {
     Write-Error "Android emulator not found at: $EMU"
     exit 1
 }
 
-Write-Host "Android SDK: $SDK"
-Write-Host "Emulator: $EMU"
-Write-Host "AVD: $AVD"
-Write-Host "Serial: $SERIAL"
-Write-Host "Package: $PKG"
+if (-not (Test-Path $ADB)) {
+    Write-Error "ADB not found at: $ADB"
+    exit 1
+}
 
-# Check whether the requested device is already online
-$devices = adb devices
+# Add Android tools to PATH
+$env:PATH = "$SDK\platform-tools;$SDK\emulator;$env:PATH"
+
+# Check connected device
+$devices = & $ADB devices
 $deviceOnline = $devices | Select-String "^$SERIAL\s+device$"
 
 if (-not $deviceOnline) {
@@ -42,7 +53,7 @@ if (-not $deviceOnline) {
         -WindowStyle Hidden
 
     Write-Host "Waiting for ADB device..."
-    adb -s $SERIAL wait-for-device
+    & $ADB -s $SERIAL wait-for-device
 }
 
 Write-Host "Waiting for boot to complete..."
@@ -51,7 +62,7 @@ $bootComplete = $false
 
 for ($i = 0; $i -lt 100; $i++) {
     try {
-        $bootStatus = adb -s $SERIAL shell getprop sys.boot_completed 2>$null
+        $bootStatus = & $ADB -s $SERIAL shell getprop sys.boot_completed 2>$null
         $bootStatus = $bootStatus.Trim()
 
         if ($bootStatus -eq "1") {
@@ -60,7 +71,6 @@ for ($i = 0; $i -lt 100; $i++) {
         }
     }
     catch {
-        # Device may not be ready yet
     }
 
     Start-Sleep -Seconds 3
@@ -75,7 +85,7 @@ Write-Host "Booted."
 
 # Grant notification permission
 try {
-    adb -s $SERIAL shell pm grant $PKG android.permission.POST_NOTIFICATIONS 2>$null
+    & $ADB -s $SERIAL shell pm grant $PKG android.permission.POST_NOTIFICATIONS 2>$null
 }
 catch {
     Write-Host "Notification permission grant skipped."
@@ -84,16 +94,16 @@ catch {
 Write-Host "Launching app to pre-warm the feed..."
 
 try {
-    adb -s $SERIAL shell monkey -p $PKG -c android.intent.category.LAUNCHER 1 2>$null
+    & $ADB -s $SERIAL shell monkey -p $PKG -c android.intent.category.LAUNCHER 1 2>$null
 }
 catch {
     Write-Host "App launch command returned an error; continuing."
 }
 
-# Wait for app to become the focused activity
+# Wait for app to become focused
 for ($i = 0; $i -lt 30; $i++) {
     try {
-        $focus = adb -s $SERIAL shell dumpsys window 2>$null
+        $focus = & $ADB -s $SERIAL shell dumpsys window 2>$null
 
         if ($focus -match [regex]::Escape($PKG)) {
             Write-Host "App is in focus."
@@ -101,7 +111,6 @@ for ($i = 0; $i -lt 30; $i++) {
         }
     }
     catch {
-        # Continue waiting
     }
 
     Start-Sleep -Seconds 2

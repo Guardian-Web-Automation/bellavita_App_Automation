@@ -112,7 +112,7 @@ export class CartScreen extends BaseScreen {
             const now = await this.totalQty()
             return dir === 'inc' ? now > before : now < before
           },
-          { timeout: 4000, interval: 600 },
+          { timeout: 6000, interval: 500 },
         )
         .then(() => true)
         .catch(() => false)

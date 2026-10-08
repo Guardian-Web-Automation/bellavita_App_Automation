@@ -71,6 +71,30 @@ export class CollectionScreen extends BaseScreen {
   }
 
   /**
+   * Robustly add the first product to the cart. In the pdp_revamp build tapping
+   * product-quick-add may: (a) add inline, (b) open the variant popup, or
+   * (c) navigate to the PDP. Handle all three and land with the item in cart.
+   * @returns the path taken: 'variant' | 'pdp' | 'inline'
+   */
+  async addFirstProduct(): Promise<'variant' | 'pdp' | 'inline'> {
+    await this.tap(this.quickAddButton)
+    await driver.pause(2500)
+    if (await this.isDisplayed('~variant-popup')) {
+      await this.tap('//*[contains(@content-desc,"variant-option-")]')
+      await driver.pause(600)
+      await this.tap('~variant-confirm')
+      await driver.pause(2000)
+      return 'variant'
+    }
+    if (await this.isDisplayed('~pdp-add-to-cart')) {
+      await this.tap('~pdp-add-to-cart')
+      await driver.pause(2000)
+      return 'pdp'
+    }
+    return 'inline'
+  }
+
+  /**
    * Quick-add the first available product. The quick-add button often sits
    * below the fold, so nudge the grid down a few times to reveal one before
    * giving up (bounded — no runaway UiScrollable search).

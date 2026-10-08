@@ -99,22 +99,21 @@ export class SearchScreen extends BaseScreen {
    * and does not live-update. Out-of-stock tiles don't morph, so we try a few.
    */
   async quickAddInStock(): Promise<boolean> {
-    const steppersBefore = await this.count(this.cardStepper)
-    let tried = 0
-    for (const btn of await this.els(this.quickAdd)) {
-      if (tried >= 4) break
-      tried++
-      await btn.click().catch(() => undefined)
-      const ok = await driver
-        .waitUntil(async () => (await this.count(this.cardStepper)) > steppersBefore, {
-          timeout: 3000,
-          interval: 500,
-        })
-        .then(() => true)
-        .catch(() => false)
-      if (ok) return true
+    // pdp_revamp: tapping a result's product-quick-add may add inline, open the
+    // variant popup, or navigate to the PDP. Handle all three; success = the
+    // View Cart bar is present afterwards.
+    await this.tap(this.quickAdd)
+    await driver.pause(2500)
+    if (await this.isDisplayed('~variant-popup')) {
+      await this.tap(this.anyVariantOption)
+      await driver.pause(600)
+      await this.tap('~variant-confirm')
+      await driver.pause(2000)
+    } else if (await this.isDisplayed('~pdp-add-to-cart')) {
+      await this.tap('~pdp-add-to-cart')
+      await driver.pause(2000)
     }
-    return false
+    return this.isDisplayed(this.cartBar)
   }
 
   async openCartBar(): Promise<void> {

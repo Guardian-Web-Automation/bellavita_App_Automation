@@ -115,4 +115,109 @@ export class PdpScreen extends BaseScreen {
       await driver.pause(600)
     }
   }
+
+  // ---- New IDs from the pdp_revamp build ----
+
+  // Image carousel
+  private readonly image = '~pdp-image'
+  async isImageDisplayed(): Promise<boolean> {
+    return this.isDisplayed(this.image)
+  }
+  /** Swipe the hero image horizontally to the next slide. */
+  async swipeImageNext(): Promise<void> {
+    const { width, height } = await driver.getWindowSize()
+    await driver.execute('mobile: swipeGesture', {
+      left: Math.round(width * 0.2),
+      top: Math.round(height * 0.25),
+      width: Math.round(width * 0.6),
+      height: Math.round(height * 0.2),
+      direction: 'left',
+      percent: 0.8,
+    })
+  }
+
+  // "Key Benefits / All Ingredients / How to use" content tabs + panel
+  async tapContentTab(slug: 'key-benefits' | 'all-ingredients' | 'how-to-use'): Promise<void> {
+    await this.scrollToContentTab(slug)
+    await this.tap(`~pdp-tab-${slug}`)
+  }
+  async isContentPanelDisplayed(): Promise<boolean> {
+    return this.isDisplayed('~pdp-tab-panel')
+  }
+  private async scrollToContentTab(slug: string): Promise<void> {
+    for (let i = 0; i < 5; i++) {
+      if (await this.isDisplayed(`~pdp-tab-${slug}`)) return
+      await this.swipeDown()
+      await driver.pause(500)
+    }
+  }
+
+  // Fragrance notes
+  private readonly anyNoteChip = '//*[contains(@content-desc,"pdp-note-chip-")]'
+  async revealNotes(): Promise<boolean> {
+    for (let i = 0; i < 6; i++) {
+      if (await this.isDisplayed(this.anyNoteChip)) return true
+      await this.swipeDown()
+      await driver.pause(500)
+    }
+    return this.isDisplayed(this.anyNoteChip)
+  }
+  async tapFirstNoteChip(): Promise<void> {
+    await this.tap(this.anyNoteChip)
+  }
+  async isNoteDescriptionDisplayed(): Promise<boolean> {
+    return this.isDisplayed('~pdp-note-description')
+  }
+
+  // Combo
+  private readonly comboCard = '~pdp-combo-card'
+  async revealCombo(): Promise<boolean> {
+    for (let i = 0; i < 6; i++) {
+      if (await this.isDisplayed(this.comboCard)) return true
+      await this.swipeDown()
+      await driver.pause(500)
+    }
+    return this.isDisplayed(this.comboCard)
+  }
+  async addCombo(): Promise<void> {
+    await this.tap('~pdp-add-combo')
+  }
+
+  // Similar products (container pdp-similar-products; cards use product-quick-add)
+  private readonly similarContainer = '~pdp-similar-products'
+  private readonly similarQuickAdd =
+    '//*[@content-desc="pdp-similar-products"]//*[@content-desc="product-quick-add"]'
+  async revealSimilarProducts(): Promise<boolean> {
+    for (let i = 0; i < 8; i++) {
+      if (await this.isDisplayed(this.similarContainer)) return true
+      await this.swipeDown()
+      await driver.pause(500)
+    }
+    return this.isDisplayed(this.similarContainer)
+  }
+  /** Quick-add the first Similar Products card; true once a stepper appears. */
+  async quickAddSimilar(): Promise<boolean> {
+    const before = await this.countSteppers()
+    for (const btn of await this.els(this.similarQuickAdd)) {
+      await btn.click().catch(() => undefined)
+      const ok = await driver
+        .waitUntil(async () => (await this.countSteppers()) > before, { timeout: 3000, interval: 500 })
+        .then(() => true)
+        .catch(() => false)
+      if (ok) return true
+    }
+    return false
+  }
+  private async countSteppers(): Promise<number> {
+    return (await this.els('~pdp-qty-plus')).length
+  }
+
+  // Variant / shade swatch (kept name pdp-variant-<shade>)
+  private readonly anyVariantSwatch = '//*[contains(@content-desc,"pdp-variant-")]'
+  async hasVariantSwatch(): Promise<boolean> {
+    return this.isDisplayed(this.anyVariantSwatch)
+  }
+  async tapFirstVariantSwatch(): Promise<void> {
+    await this.tap(this.anyVariantSwatch)
+  }
 }

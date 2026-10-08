@@ -64,6 +64,33 @@ export class HomeScreen extends BaseScreen {
     return (await this.els(selector)).length
   }
 
+  // ---- Appmaker banners / hero CTAs / card rows (stable UUID ids) ----
+  // These come from the Appmaker SDK; dev confirmed stable resource-id +
+  // content-desc per banner/row. Tap the banner itself ("Shop Now" / arrows are
+  // part of the image). Card rows have no per-card id — tap by position.
+
+  /** Scroll the feed until an element (by ~id) is visible. */
+  async revealById(id: string, max = 10): Promise<boolean> {
+    for (let i = 0; i < max; i++) {
+      if (await this.isDisplayed(`~${id}`)) return true
+      await this.swipeDown()
+      await driver.pause(500)
+    }
+    return this.isDisplayed(`~${id}`)
+  }
+
+  /** Reveal and tap an Appmaker banner / hero by its id. */
+  async tapBanner(id: string): Promise<void> {
+    await this.revealById(id)
+    await this.tap(`~${id}`)
+  }
+
+  /** Reveal a card row by id and tap the Nth clickable card inside it (1-based). */
+  async tapCardInRow(rowId: string, position = 1): Promise<void> {
+    await this.revealById(rowId)
+    await this.tap(`(//*[@resource-id='${rowId}']//*[@clickable='true'])[${position}]`)
+  }
+
   /** Quick-add the first in-stock carousel card; true once a stepper appears. */
   async quickAddFromCarousel(): Promise<boolean> {
     const before = await this.count(this.cardStepper)

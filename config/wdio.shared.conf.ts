@@ -6,43 +6,55 @@ export const shared: Partial<WebdriverIO.Config> = {
   runner: 'local',
   specs: ['../tests/regression/**/*.spec.ts'],
   exclude: [],
+
   maxInstances: 1,
-  // A full back-to-back run can intermittently blank the app feed on a
-  // memory-constrained host (always-present nav/feed elements momentarily
-  // "not displayed"). Retry a failed spec file once, deferred to the end of
-  // the queue so the emulator gets a breather before the re-run.
+
   specFileRetries: 1,
   specFileRetriesDeferred: true,
   specFileRetriesDelay: 5,
-  logLevel: 'info',
+
+  // Keep console output clean
+  logLevel: 'warn',
+
   bail: 0,
   waitforTimeout: 15000,
   connectionRetryTimeout: 120000,
   connectionRetryCount: 3,
+
   services: [
     ['appium', {
       args: {
         address: process.env.APPIUM_HOST || '127.0.0.1',
         port: Number(process.env.APPIUM_PORT) || 4723,
-        relaxedSecurity: true
+        relaxedSecurity: true,
+
+        // Reduce Appium console noise
+        logLevel: 'error'
       },
       logPath: './reports/'
     }]
   ],
+
   hostname: process.env.APPIUM_HOST || '127.0.0.1',
   port: Number(process.env.APPIUM_PORT) || 4723,
   path: '/',
+
   framework: 'mocha',
-  mochaOpts: { ui: 'bdd', timeout: 180000 },
+
+  mochaOpts: {
+    ui: 'bdd',
+    timeout: 180000
+  },
+
   reporters: [
     'spec',
+
     ['allure', {
       outputDir: './reports/allure-results',
       disableWebdriverStepsReporting: false,
       disableWebdriverScreenshotsReporting: false
     }],
-    // JUnit XML (one per worker) under ./results — parsed by the daily workflow
-    // to build the Slack summary.
+
     ['junit', {
       outputDir: './results',
       outputFileFormat(options: { cid: string }) {
@@ -50,29 +62,41 @@ export const shared: Partial<WebdriverIO.Config> = {
       }
     }]
   ],
+
   onPrepare: function () {},
+
   before: async function () {
-    // Fresh installs prompt for the Android 13+ notifications permission at
-    // runtime, which blocks the app UI. Grant it up front and dismiss any
-    // lingering permission dialog so the app renders.
-    const pkg = process.env.ANDROID_APP_PACKAGE || 'com.bellavita.shopifyapps'
+    const pkg =
+      process.env.ANDROID_APP_PACKAGE ||
+      'com.bellavita.shopifyapps'
+
     try {
       await driver.execute('mobile: shell', {
         command: 'pm',
-        args: ['grant', pkg, 'android.permission.POST_NOTIFICATIONS']
+        args: [
+          'grant',
+          pkg,
+          'android.permission.POST_NOTIFICATIONS'
+        ]
       })
     } catch {
-      /* relaxedSecurity may be off, or already granted — ignore */
+      // Permission may already be granted
     }
-    const allowSel = 'android=new UiSelector().resourceIdMatches(".*permission_allow.*button")'
+
+    const allowSel =
+      'android=new UiSelector().resourceIdMatches(".*permission_allow.*button")'
+
     for (let i = 0; i < 3; i++) {
       let count = 0
+
       try {
         count = await $$(allowSel).length
       } catch {
         break
       }
+
       if (count === 0) break
+
       try {
         await $(allowSel).click()
         await driver.pause(800)
@@ -81,8 +105,12 @@ export const shared: Partial<WebdriverIO.Config> = {
       }
     }
   },
+
   afterTest: async function (_test, _context, result) {
-    if (!result.passed) { await browser.takeScreenshot() }
+    if (!result.passed) {
+      await browser.takeScreenshot()
+    }
   },
+
   onComplete: function () {}
 }

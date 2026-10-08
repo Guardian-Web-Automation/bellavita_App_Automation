@@ -96,14 +96,62 @@ describe('Crazy Deals / Build Your Box Module (High)', () => {
     await expect($('//*[@text="STEP 1"]')).toBeDisplayed()
   })
 
-  // ---- ⏭️ Blocked: untagged builder internals -----------------------------
-  it.skip('BV_DEAL_POS_010 "OPEN" shutter reveals product slots — BLOCKED: side shutter untagged', () => {})
-  it.skip('BV_DEAL_POS_012 adding a product fills a shutter slot — BLOCKED: shutter slots untagged', () => {})
-  it.skip('BV_DEAL_POS_014 remove a product from its shutter slot — BLOCKED: shutter slots untagged', () => {})
-  it.skip('BV_DEAL_NEG_015 Add To Box disables after required count — BLOCKED: disabled state untagged', () => {})
-  it.skip('BV_DEAL_POS_016 removing re-enables disabled Add To Box — BLOCKED: disabled state untagged', () => {})
-  it.skip('BV_DEAL_BND_017 Add-to-Cart bar hidden at N-1, shown at N — BLOCKED: add-to-cart bar not exposed', () => {})
-  it.skip('BV_DEAL_POS_019 ADD TO CART adds the box as one bundled item — BLOCKED: add-to-cart bar not exposed', () => {})
-  it.skip('BV_DEAL_POS_020 cart shows the deal as one bundled line item — BLOCKED: bundle line-item untagged', () => {})
-  it.skip('BV_DEAL_E2E_027 full build-a-box → add-to-cart journey — BLOCKED: shutter/add-to-cart-bar not exposed', () => {})
+  // ---- ✅ Unblocked by pdp_revamp testIDs (shutter + box add-to-cart) ------
+
+  it('BV_DEAL_POS_010 the OPEN shutter reveals product slots', async () => {
+    await deals.openFirstBox()
+    await deals.isBuilderLoaded()
+    await deals.openShutter()
+    await driver.pause(1000)
+    expect(await deals.isShutterOpen()).toBe(true)
+  })
+
+  it('BV_DEAL_NEG_015 Add To Box disables once the box is full', async () => {
+    await deals.openFirstBox()
+    await deals.isBuilderLoaded()
+    await deals.fillBox()
+    expect(await deals.isAddToBoxDisabled()).toBe(true)
+  })
+
+  it('BV_DEAL_POS_016 removing a product re-enables Add To Box', async () => {
+    await deals.openFirstBox()
+    await deals.isBuilderLoaded()
+    await deals.fillBox()
+    expect(await deals.isAddToBoxDisabled()).toBe(true)
+    await deals.removeFirstFromBox()
+    await driver.pause(1200)
+    await expect($('~deal-add-to-box')).toBeDisplayed()
+  })
+
+  it('BV_DEAL_BND_017 the ADD TO CART bar shows only once the box is full', async () => {
+    await deals.openFirstBox()
+    await deals.isBuilderLoaded()
+    // Below the required count the bar should be absent.
+    expect(await deals.isAddToCartBarVisible()).toBe(false)
+    await deals.fillBox()
+    expect(await deals.isAddToCartBarVisible()).toBe(true)
+  })
+
+  it('BV_DEAL_POS_019 ADD TO CART adds the box to the cart', async () => {
+    await deals.openFirstBox()
+    await deals.isBuilderLoaded()
+    await deals.fillBox()
+    await deals.addBoxToCart()
+    await driver.pause(2500)
+    await expect($('//*[contains(@content-desc,"View Cart")]')).toBeDisplayed()
+  })
+
+  it('BV_DEAL_E2E_027 full build-a-box → add-to-cart → cart', async () => {
+    await deals.openFirstBox()
+    await deals.isBuilderLoaded()
+    await deals.fillBox()
+    await deals.addBoxToCart()
+    await driver.pause(2500)
+    await expect($('//*[contains(@content-desc,"View Cart")]')).toBeDisplayed()
+  })
+
+  // ---- ⏭️ Still blocked / needs live shutter mechanics --------------------
+  it.skip('BV_DEAL_POS_012 adding a product fills a shutter slot — needs live shutter-slot binding (covered partly by 010)', () => {})
+  it.skip('BV_DEAL_POS_014 remove a product from its shutter slot — needs live shutter-slot remove control', () => {})
+  it.skip('BV_DEAL_POS_020 cart shows the deal as one bundled line item — BLOCKED: no bundle line-item testID in cart', () => {})
 })

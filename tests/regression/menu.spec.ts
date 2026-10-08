@@ -86,11 +86,30 @@ describe('Hamburger Menu Module (High)', () => {
     await expect($('//*[contains(@content-desc,"₹")]')).toBeDisplayed()
   })
 
-  // ---- ⏭️ Blocked: sub-category drill-down not tagged ----------------------
-  it.skip('BV_MENU_POS_013 expand Perfumes sub-category list — BLOCKED: expand arrows / sub-items not tagged', () => {})
-  it.skip('BV_MENU_POS_015 "All Perfumes" sub-item → collection — BLOCKED: sub-items not tagged', () => {})
-  it.skip('BV_MENU_E2E_035 drill into a Perfumes sub-category → PLP — BLOCKED: sub-items not tagged', () => {})
-  it.skip('BV_MENU_POS_038 expand Perfumes → sub-category (Women) → PLP — BLOCKED: sub-items not tagged', () => {})
+  // ---- ✅ Sub-category drill-down (tagged in pdp_revamp) -------------------
+  // Sub-items use slugs like menu-perfumes-all-perfumes / menu-perfumes-women.
+
+  it('BV_MENU_POS_013 the Perfumes sub-category list is available', async () => {
+    expect(await nav.revealMenuItem('perfumes-all-perfumes')).toBe(true)
+  })
+
+  it('BV_MENU_POS_015 "All Perfumes" sub-item opens its collection', async () => {
+    await nav.openMenuItemScrolled('perfumes-all-perfumes')
+    await driver.pause(2500)
+    await expect($('//*[contains(@content-desc,"₹")]')).toBeDisplayed()
+  })
+
+  it('BV_MENU_E2E_035 drilling into a Perfumes sub-category opens a PLP', async () => {
+    await nav.openMenuItemScrolled('perfumes-all-perfumes')
+    await driver.pause(2500)
+    await expect($('//*[contains(@content-desc,"₹")]')).toBeDisplayed()
+  })
+
+  it('BV_MENU_POS_038 Perfumes → Women sub-category opens a PLP', async () => {
+    await nav.openMenuItemScrolled('perfumes-women')
+    await driver.pause(2500)
+    await expect($('//*[contains(@content-desc,"₹")]')).toBeDisplayed()
+  })
 
   // ---- ⏭️ Blocked: login (phase 2) ----------------------------------------
   it.skip('BV_MENU_POS_005 logged-in menu shows profile/greeting — BLOCKED: login (phase 2)', () => {})

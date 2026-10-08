@@ -120,4 +120,87 @@ export class SearchScreen extends BaseScreen {
   async openCartBar(): Promise<void> {
     await this.tap(this.cartBar)
   }
+
+  // ---- Filter / Sort (appear AFTER submitting a search; same ids as PLP) ----
+  async openFilter(): Promise<void> {
+    await this.tap('~filter-button')
+  }
+  async isFilterPanelOpen(): Promise<boolean> {
+    return this.isDisplayed('~filter-apply')
+  }
+  async selectFilterTab(index: number): Promise<void> {
+    await this.tap(`~filter-item-list-${index}`)
+  }
+  async selectFilterOption(index: number): Promise<void> {
+    await this.tap(`~filter-option-${index}`)
+  }
+  async selectFilterOptionByValue(value: string): Promise<void> {
+    await this.tap(`~filter-option-${value}`)
+  }
+  async isFilterOptionDisplayed(value: string): Promise<boolean> {
+    return this.isDisplayed(`~filter-option-${value}`)
+  }
+  async applyFilter(): Promise<void> {
+    await this.tap('~filter-apply')
+  }
+  async openSort(): Promise<void> {
+    await this.tap('~sort-button')
+  }
+  async isSortSheetOpen(): Promise<boolean> {
+    return this.isDisplayed('~sort-close')
+  }
+  async selectSortOption(index: number): Promise<void> {
+    await this.tap(`~sort-option-${index}`)
+  }
+
+  /** Selling price of each result card in grid order (first ₹ in each blurb). */
+  async getResultPricesInOrder(): Promise<number[]> {
+    const prices: number[] = []
+    for (const card of await this.els(this.resultCard)) {
+      const label = (await card.getAttribute('content-desc').catch(() => '')) ?? ''
+      const m = label.match(/₹\s?([\d,]+(?:\.\d+)?)/)
+      if (m) prices.push(Number(m[1].replace(/,/g, '')))
+    }
+    return prices
+  }
+
+  // ---- Recent Searches (populate after at least one search) ----
+  readonly recentHeading = '//*[@text="Recent Searches"]'
+  async isRecentSearchesDisplayed(): Promise<boolean> {
+    return this.isDisplayed(this.recentHeading)
+  }
+  /** Tap the first Recent Searches chip (Button under the heading). */
+  async tapFirstRecentSearch(): Promise<void> {
+    await this.tap('//*[@text="Recent Searches"]/following::android.widget.Button[1]')
+  }
+
+  // ---- Variant popup on a search card (same ids as PLP) ----
+  private readonly variantPopup = '~variant-popup'
+  private readonly anyVariantOption = '//*[contains(@content-desc,"variant-option-")]'
+  async isVariantPopupOpen(): Promise<boolean> {
+    return this.isDisplayed(this.variantPopup)
+  }
+  async openVariantPopup(maxCards = 8): Promise<boolean> {
+    let tried = 0
+    for (const btn of await this.els(this.quickAdd)) {
+      if (tried >= maxCards) break
+      tried++
+      await btn.click().catch(() => undefined)
+      const opened = await driver
+        .waitUntil(async () => this.isVariantPopupOpen(), { timeout: 2500, interval: 500 })
+        .then(() => true)
+        .catch(() => false)
+      if (opened) return true
+    }
+    return false
+  }
+  async selectFirstVariantOption(): Promise<void> {
+    await this.tap(this.anyVariantOption)
+  }
+  async confirmVariant(): Promise<void> {
+    await this.tap('~variant-confirm')
+  }
+  async closeVariantPopup(): Promise<void> {
+    await this.tap('~variant-close')
+  }
 }

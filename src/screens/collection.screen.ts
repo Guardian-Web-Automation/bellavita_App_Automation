@@ -152,8 +152,87 @@ export class CollectionScreen extends BaseScreen {
     await this.tap(`~filter-option-${index}`)
   }
 
+  /** Select a filter option by its value-based id (e.g. "in-stock"). */
+  async selectFilterOptionByValue(value: string): Promise<void> {
+    await this.tap(`~filter-option-${value}`)
+  }
+
+  async isFilterOptionDisplayed(value: string): Promise<boolean> {
+    return this.isDisplayed(`~filter-option-${value}`)
+  }
+
   async applyFilter(): Promise<void> {
     await this.tap(this.filterApply)
+  }
+
+  // ---- Price-range filter (tagged in pdp_revamp build) ----
+  readonly priceSlider = '~filter-price-slider'
+  readonly priceMin = '~filter-price-min'
+  readonly priceMax = '~filter-price-max'
+
+  async isPriceSliderDisplayed(): Promise<boolean> {
+    return this.isDisplayed(this.priceSlider)
+  }
+
+  // ---- Variant / shade pop-up (tagged in pdp_revamp build) ----
+  // Tapping a card's product-quick-add on a MULTI-variant product opens the
+  // variant popup; on a single-variant product it adds directly (no popup).
+  private readonly variantPopup = '~variant-popup'
+  private readonly variantConfirm = '~variant-confirm'
+  private readonly variantClose = '~variant-close'
+  private readonly anyVariantOption = '//*[contains(@content-desc,"variant-option-")]'
+  private readonly oosButton = '//*[@content-desc="product-quick-add" and @enabled="false"]'
+
+  async isVariantPopupOpen(): Promise<boolean> {
+    return this.isDisplayed(this.variantPopup)
+  }
+
+  /**
+   * Tap product-quick-add on cards until the variant popup appears (a
+   * multi-variant product). Returns true once the popup is open.
+   */
+  async openVariantPopup(maxCards = 8): Promise<boolean> {
+    const btns = await this.els(this.quickAddButton)
+    let tried = 0
+    for (const btn of btns) {
+      if (tried >= maxCards) break
+      tried++
+      await btn.click().catch(() => undefined)
+      const opened = await driver
+        .waitUntil(async () => this.isVariantPopupOpen(), { timeout: 2500, interval: 500 })
+        .then(() => true)
+        .catch(() => false)
+      if (opened) return true
+    }
+    return false
+  }
+
+  async selectFirstVariantOption(): Promise<void> {
+    await this.tap(this.anyVariantOption)
+  }
+
+  async confirmVariant(): Promise<void> {
+    await this.tap(this.variantConfirm)
+  }
+
+  async closeVariantPopup(): Promise<void> {
+    await this.tap(this.variantClose)
+  }
+
+  /** True if any out-of-stock card shows a disabled (enabled=false) quick-add. */
+  async hasDisabledQuickAdd(): Promise<boolean> {
+    for (const _ of await this.els(this.oosButton)) return true
+    return false
+  }
+
+  /** Scroll the grid down to try to reveal an out-of-stock card. */
+  async revealDisabledQuickAdd(max = 5): Promise<boolean> {
+    for (let i = 0; i < max; i++) {
+      if (await this.hasDisabledQuickAdd()) return true
+      await this.swipeDown()
+      await driver.pause(600)
+    }
+    return this.hasDisabledQuickAdd()
   }
 
   // ---- Discrete price / MRP nodes (tagged in build v5.780) ----

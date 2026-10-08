@@ -130,30 +130,160 @@ describe('Search Module (High)', () => {
   it.skip('BV_SRCH_POS_065 search → suggestion → results → add to cart — BLOCKED: suggestion-results quick-add inconsistent (covered by E2E_062)', () => {})
 
   // ---- ⏭️ Blocked: SORT / FILTER are not present in the Wizzy search UI ----
-  // Confirmed via live dump: the search results screen has no Filter or Sort
-  // controls at all (they exist on the PLP, covered there), so these cannot be
-  // exercised from Search.
-  it.skip('BV_SRCH_POS_044 Filter panel opens with four tabs — BLOCKED: no Filter control in search UI', () => {})
-  it.skip('BV_SRCH_POS_050 Availability filter (In stock) — BLOCKED: no Filter control in search UI', () => {})
-  it.skip('BV_SRCH_POS_051 combine Price + Type + Availability filters — BLOCKED: no Filter control in search UI', () => {})
-  it.skip('BV_SRCH_POS_055 Sort bottom sheet opens (Featured default) — BLOCKED: no Sort control in search UI', () => {})
-  it.skip('BV_SRCH_POS_056 Sort Price: Low to High — BLOCKED: no Sort control in search UI', () => {})
-  it.skip('BV_SRCH_POS_057 Sort Price: High to Low — BLOCKED: no Sort control in search UI', () => {})
-  it.skip('BV_SRCH_POS_059 Filter + Sort combined — BLOCKED: no Sort/Filter control in search UI', () => {})
-  it.skip('BV_SRCH_POS_066 search → sort → add cheapest from grid — BLOCKED: no Sort control in search UI', () => {})
+  // ---- ✅ Filter / Sort (appear after submitting a search — pdp_revamp) -----
 
-  // ---- ⏭️ Blocked: variant/shade popup not exposed on search cards ---------
-  // Confirmed via live dump: no "X Shades"/"X Variant" CTA on search cards.
-  it.skip('BV_SRCH_POS_013 "X Shades" CTA opens Select Variant popup — BLOCKED: variant CTA/popup not exposed', () => {})
-  it.skip('BV_SRCH_POS_015 ADD TO CART in Select Variant popup — BLOCKED: variant popup not exposed', () => {})
-  it.skip('BV_SRCH_POS_040 variant shade-selection CTA on results — BLOCKED: variant CTA/popup not exposed', () => {})
-  it.skip('BV_SRCH_E2E_064 shaded product variant → cart drawer — BLOCKED: variant popup not exposed', () => {})
+  it('BV_SRCH_POS_044 Filter panel opens on search results', async () => {
+    await search.search('perfume')
+    await driver.pause(2500)
+    await search.openFilter()
+    await expect($('~filter-apply')).toBeDisplayed()
+  })
 
-  // ---- ⏭️ Blocked: no Recent Searches section observed on the landing ------
-  it.skip('BV_SRCH_POS_003 searched term appears under Recent Searches — BLOCKED: no Recent Searches section in build', () => {})
-  it.skip('BV_SRCH_POS_006 tapping a recent search opens results — BLOCKED: no Recent Searches section in build', () => {})
+  it('BV_SRCH_POS_050 Availability "In stock" filter keeps a product grid', async () => {
+    await search.search('perfume')
+    await driver.pause(2500)
+    await search.openFilter()
+    for (let i = 0; i < 4 && !(await search.isFilterOptionDisplayed('in-stock')); i++) {
+      await search.selectFilterTab(i).catch(() => undefined)
+      await driver.pause(500)
+    }
+    await search.selectFilterOptionByValue('in-stock')
+    await search.applyFilter()
+    await driver.pause(2000)
+    await expect($('//*[contains(@content-desc,"₹")]')).toBeDisplayed()
+  })
 
-  // ---- ⏭️ Blocked: env / login (phase 2) ----------------------------------
-  it.skip('BV_SRCH_NEG_060 offline search error state — BLOCKED: env (network toggle) + error state untagged', () => {})
-  it.skip('BV_SRCH_E2E_063 logged-in search/filter/sort → add cheapest — BLOCKED: login (phase 2) + no sort/filter', () => {})
+  it('BV_SRCH_POS_051 combining filters keeps a product grid', async () => {
+    await search.search('perfume')
+    await driver.pause(2500)
+    await search.openFilter()
+    await search.selectFilterTab(0)
+    await search.selectFilterOption(0)
+    await search.selectFilterTab(1).catch(() => undefined)
+    await search.selectFilterOption(0).catch(() => undefined)
+    await search.applyFilter()
+    await driver.pause(2000)
+    await expect($('//*[contains(@content-desc,"₹")]')).toBeDisplayed()
+  })
+
+  it('BV_SRCH_POS_055 Sort sheet opens on search results', async () => {
+    await search.search('perfume')
+    await driver.pause(2500)
+    await search.openSort()
+    await expect($('~sort-close')).toBeDisplayed()
+  })
+
+  it('BV_SRCH_POS_056 Sort Price: Low to High orders results ascending', async () => {
+    await search.search('perfume')
+    await driver.pause(2500)
+    await search.openSort()
+    await search.selectSortOption(2)
+    await driver.pause(2500)
+    const prices = await search.getResultPricesInOrder()
+    expect(prices.length).toBeGreaterThan(1)
+    expect(prices).toEqual([...prices].sort((a, b) => a - b))
+  })
+
+  it('BV_SRCH_POS_057 Sort Price: High to Low orders results descending', async () => {
+    await search.search('perfume')
+    await driver.pause(2500)
+    await search.openSort()
+    await search.selectSortOption(3)
+    await driver.pause(2500)
+    const prices = await search.getResultPricesInOrder()
+    expect(prices.length).toBeGreaterThan(1)
+    expect(prices).toEqual([...prices].sort((a, b) => b - a))
+  })
+
+  it('BV_SRCH_POS_059 Filter + Sort combined keeps an ordered grid', async () => {
+    await search.search('perfume')
+    await driver.pause(2500)
+    await search.openFilter()
+    await search.selectFilterTab(0)
+    await search.selectFilterOption(0)
+    await search.applyFilter()
+    await driver.pause(1500)
+    await search.openSort()
+    await search.selectSortOption(2)
+    await driver.pause(2500)
+    const prices = await search.getResultPricesInOrder()
+    expect(prices.length).toBeGreaterThan(1)
+    expect(prices).toEqual([...prices].sort((a, b) => a - b))
+  })
+
+  it('BV_SRCH_POS_066 search → sort Low→High → add the cheapest', async () => {
+    await search.search('perfume')
+    await driver.pause(2500)
+    await search.openSort()
+    await search.selectSortOption(2)
+    await driver.pause(2500)
+    expect(await search.quickAddInStock()).toBe(true)
+  })
+
+  // ---- ✅ Recent Searches (populate after a search — pdp_revamp) ------------
+
+  it('BV_SRCH_POS_003 a searched term appears under Recent Searches', async () => {
+    await search.search('perfume')
+    await driver.pause(2500)
+    // Return to the search landing; Recent Searches should now be present.
+    await driver.back()
+    await driver.pause(1000)
+    await search.open().catch(() => undefined)
+    await driver.pause(1000)
+    expect(await search.isRecentSearchesDisplayed()).toBe(true)
+  })
+
+  it('BV_SRCH_POS_006 tapping a recent search opens results', async () => {
+    await search.search('perfume')
+    await driver.pause(2500)
+    await driver.back()
+    await driver.pause(1000)
+    await search.open().catch(() => undefined)
+    await driver.pause(1000)
+    expect(await search.isRecentSearchesDisplayed()).toBe(true)
+    await search.tapFirstRecentSearch()
+    await driver.pause(2500)
+    await expect($('//*[contains(@content-desc,"₹")]')).toBeDisplayed()
+  })
+
+  // ---- ✅ Variant popup on search cards (pdp_revamp) -----------------------
+
+  it('BV_SRCH_POS_013 a variant card quick-add opens the Select Variant popup', async () => {
+    await search.search('lipstick')
+    await driver.pause(2500)
+    expect(await search.openVariantPopup()).toBe(true)
+    await search.closeVariantPopup().catch(() => undefined)
+  })
+
+  it('BV_SRCH_POS_015 ADD in the Select Variant popup adds to cart', async () => {
+    await search.search('lipstick')
+    await driver.pause(2500)
+    expect(await search.openVariantPopup()).toBe(true)
+    await search.selectFirstVariantOption()
+    await search.confirmVariant()
+    await driver.pause(2000)
+    await expect($('//*[contains(@content-desc,"View Cart")]')).toBeDisplayed()
+  })
+
+  it('BV_SRCH_POS_040 a variant shade CTA on results opens the popup', async () => {
+    await search.search('lipstick')
+    await driver.pause(2500)
+    expect(await search.openVariantPopup()).toBe(true)
+    await search.closeVariantPopup().catch(() => undefined)
+  })
+
+  it('BV_SRCH_E2E_064 shaded product variant → add → cart', async () => {
+    await search.search('lipstick')
+    await driver.pause(2500)
+    expect(await search.openVariantPopup()).toBe(true)
+    await search.selectFirstVariantOption()
+    await search.confirmVariant()
+    await driver.pause(2000)
+    await search.openCartBar()
+    await expect($('~PLACE ORDER')).toBeDisplayed()
+  })
+
+  // ---- ⏭️ Blocked: no error screen / login (phase 2) ----------------------
+  it.skip('BV_SRCH_NEG_060 offline search error state — BLOCKED: no error screen yet (dev product decision)', () => {})
+  it.skip('BV_SRCH_E2E_063 logged-in search/filter/sort → add cheapest — BLOCKED: login (phase 2)', () => {})
 })

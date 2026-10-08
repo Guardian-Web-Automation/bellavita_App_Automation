@@ -69,4 +69,60 @@ export class CrazyDealsScreen extends BaseScreen {
   async searchInDeal(term: string): Promise<void> {
     await this.type(this.builderSearch, term)
   }
+
+  // ---- Shutter + box add-to-cart (tagged in pdp_revamp build) ----
+  private readonly shutterOpen = '~deal-shutter-open'
+  private readonly shutterClose = '~deal-shutter-close'
+  private readonly anyShutterSlot = '//*[contains(@content-desc,"deal-shutter-slot-")]'
+  private readonly addToBoxNew = '~deal-add-to-box'
+  private readonly addToBoxDisabled = '~deal-add-to-box-disabled'
+  private readonly addBoxToCartBtn = '~deal-add-to-cart'
+
+  async openShutter(): Promise<void> {
+    await this.tap(this.shutterOpen)
+  }
+  async closeShutter(): Promise<void> {
+    await this.tap(this.shutterClose)
+  }
+  async isShutterOpen(): Promise<boolean> {
+    return this.isDisplayed(this.anyShutterSlot)
+  }
+  async shutterSlotCount(): Promise<number> {
+    return (await this.els(this.anyShutterSlot)).length
+  }
+
+  /** Number of "Add To Box" buttons still enabled (new deal-add-to-box id). */
+  private async addButtonCount(): Promise<number> {
+    return (await this.els(this.addToBoxNew)).length
+  }
+
+  /** Add products until the box is full (the add buttons become disabled). */
+  async fillBox(max = 6): Promise<void> {
+    for (let i = 0; i < max; i++) {
+      if (await this.isAddToBoxDisabled()) return
+      const btns = await this.els(this.addToBoxNew)
+      let tapped = false
+      for (const b of btns) {
+        if (await b.isDisplayed().catch(() => false)) {
+          await b.click().catch(() => undefined)
+          tapped = true
+          break
+        }
+      }
+      if (!tapped) return
+      await driver.pause(1000)
+    }
+  }
+
+  async isAddToBoxDisabled(): Promise<boolean> {
+    return this.isDisplayed(this.addToBoxDisabled)
+  }
+
+  async isAddToCartBarVisible(): Promise<boolean> {
+    return this.isDisplayed(this.addBoxToCartBtn)
+  }
+
+  async addBoxToCart(): Promise<void> {
+    await this.tap(this.addBoxToCartBtn)
+  }
 }

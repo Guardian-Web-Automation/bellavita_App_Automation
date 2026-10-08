@@ -79,4 +79,27 @@ export class NavigationScreen extends BaseScreen {
   async isMenuItemDisplayed(slug: string): Promise<boolean> {
     return this.isDisplayed(`~menu-${slug}`)
   }
+
+  /**
+   * Open the drawer and scroll it until a (sub-)menu item is visible.
+   * Sub-category items use slugs like "perfumes-all-perfumes", "perfumes-women".
+   */
+  async revealMenuItem(slug: string, max = 6): Promise<boolean> {
+    if (!(await this.isDisplayed(this.closeDrawerButton))) {
+      await this.openDrawer()
+      await driver.pause(800)
+    }
+    for (let i = 0; i < max; i++) {
+      if (await this.isMenuItemDisplayed(slug)) return true
+      await this.swipeDown()
+      await driver.pause(500)
+    }
+    return this.isMenuItemDisplayed(slug)
+  }
+
+  /** Open the drawer, reveal a (sub-)menu item, and tap it. */
+  async openMenuItemScrolled(slug: string): Promise<void> {
+    await this.revealMenuItem(slug)
+    await this.tap(`~menu-${slug}`)
+  }
 }

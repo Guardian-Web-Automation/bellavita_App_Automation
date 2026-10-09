@@ -30,6 +30,27 @@ describe('Cart Module (High)', () => {
     }
   })
 
+  // Seed the cart when empty. pdp_revamp: product-quick-add navigates to the PDP
+  // (it no longer adds inline), so go to the Shop All PLP, tap quick-add, and
+  // complete the add from whichever surface appears (variant popup → option +
+  // confirm, or PDP → pdp-add-to-cart). Mirrors scripts/seed-cart.mjs.
+  async function seedCartIfEmpty(): Promise<void> {
+    if (await home.isCartBarDisplayed()) return
+    await nav.openMenuItem('shop-all').catch(() => undefined)
+    await driver.pause(3000)
+    await $('~product-quick-add').click().catch(() => undefined)
+    await driver.pause(3000)
+    if (await $('~variant-popup').isDisplayed().catch(() => false)) {
+      await $('//*[contains(@content-desc,"variant-option-")]').click().catch(() => undefined)
+      await driver.pause(800)
+      await $('~variant-confirm').click().catch(() => undefined)
+      await driver.pause(2500)
+    } else if (await $('~pdp-add-to-cart').isDisplayed().catch(() => false)) {
+      await $('~pdp-add-to-cart').click().catch(() => undefined)
+      await driver.pause(3000)
+    }
+  }
+
   // Return to Home before each test (View Cart bar shows on listing screens).
   beforeEach(async () => {
     for (let i = 0; i < 5 && !(await nav.isTabDisplayed('Home')); i++) {
@@ -43,8 +64,16 @@ describe('Cart Module (High)', () => {
     }
     // Ensure the cart is non-empty so the View Cart bar + cart screen exist.
     if (!(await home.isCartBarDisplayed())) {
-      await home.quickAddFirstProduct().catch(() => undefined)
-      await driver.pause(2500)
+      await seedCartIfEmpty()
+      // Back to Home so the View Cart bar is on screen for the test.
+      for (let i = 0; i < 4 && !(await nav.isTabDisplayed('Home')); i++) {
+        await driver.back()
+        await driver.pause(600)
+      }
+      if (await nav.isTabDisplayed('Home')) {
+        await nav.tapHome()
+        await driver.pause(800)
+      }
     }
   })
 
